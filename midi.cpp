@@ -213,9 +213,8 @@ bool Midi::parse(const char *name) {
     });
 
     for (float i = 0, elapsedTicks = 0.0f, time = 0.0f; i < tempo_map.size(); ++i) {
-        float result = ((tempo_map[i].tick - elapsedTicks) / timeDivision);
+        time += (unitOfTime / tempo_map[i ? i - 1 : i].tempo) * ((tempo_map[i].tick - elapsedTicks) / timeDivision);
         elapsedTicks = tempo_map[i].tick;
-        time += ((unitOfTime / tempo_map[i ? i - 1 : i].tempo) * result);
         tempo_map[i].time = time;
     }
 
