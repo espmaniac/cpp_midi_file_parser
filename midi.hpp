@@ -10,7 +10,7 @@ class Midi {
 private:
     uint32_t readBytes(uint16_t);
     uint8_t readByte();
-    void skipBytes(uint32_t);
+    void seekg(int32_t);
     uint32_t readVarLen();
     std::string readStr(uint16_t);
     uint32_t swap32(uint32_t) const;
