@@ -16,7 +16,7 @@ bool Midi::parse(const char *name) {
     if (chunkSize != 6) return 1;
 
     //uint16_t formatType = readBytes(2);
-    skipBytes(2);
+    seekg(2);
 
     uint16_t numOfTracks = readBytes(2);
     uint32_t timeDivision = readBytes(2);
@@ -30,9 +30,9 @@ bool Midi::parse(const char *name) {
     for (uint16_t i = 0; i < numOfTracks; ++i) {
         //bool EOT = false;
         //std::string mtrkHeader = readStr(4);
-        skipBytes(4); // MTrk header
+        seekg(4); // MTrk header
         uint32_t length = pos + readBytes(4);
-        //skipBytes(8); // Mtrk header 4 + trackLength 4
+        //seekg(8); // Mtrk header 4 + trackLength 4
         uint32_t tick = 0;
         tracks.push_back(Track());
         for (;pos <= length/*!EOT*/;) {
@@ -41,11 +41,7 @@ bool Midi::parse(const char *name) {
 
             if (event < 0x80) {
                 event = previousEvent;
-                /*
-                --pos;
-                in.seekg(-1, std::ios_base::cur);
-                */
-                in.seekg(--pos, std::ios_base::beg);
+                seekg(-1);
                 if(event == 0) continue; // SysEx event
             } else 
                 previousEvent = ((event & 0xF0) != 0xF0) ? event : 0;
@@ -72,88 +68,88 @@ bool Midi::parse(const char *name) {
                 case 0xA0: { //Polyphonic Pressure
                     //int8_t note = readByte();
                     //int8_t pressure = readByte();   
-                    skipBytes(2);
+                    seekg(2);
                 }
                 break;
 
                 case 0xB0: { // controller
                     //int8_t controller = readByte();
                     //int8_t value = readByte();  
-                    skipBytes(2);
+                    seekg(2);
                 }
                 break;
 
                 case 0xC0: { // program change
                     //int8_t program = readByte();
-                    skipBytes(1);
+                    seekg(1);
                 }
                 break;
 
                 case 0xD0: { // Channel Pressure
                     //int8_t pressure = readByte();
-                    skipBytes(1);
+                    seekg(1);
                 }
                 break;
 
                 case 0xE0: { // pitch bend
                     //int8_t lsb = readByte();
                     //int8_t msb = readByte();
-                    skipBytes(2);
+                    seekg(2);
                 }
                 break;
 
                 case 0xF0: { // SysEx event
                     if (event == 0xF0) // System Exclusive Message Begin
-                        skipBytes(readVarLen());
+                        seekg(readVarLen());
                     else if (event == 0xF7) // System Exclusive Message End
-                        skipBytes(readVarLen());
+                        seekg(readVarLen());
                     else if (event == 0xFF) {
                         uint8_t type = readByte();
                         uint32_t value = readVarLen();
 
                         switch(type) {
                             case 0x00: { // MetaSequence
-                                skipBytes(2);
+                                seekg(2);
                             }
                             break;
 
                             case 0x01: { // MetaText
-                                skipBytes(value);
+                                seekg(value);
                             }
                             break;
 
                             case 0x02: { // MetaCopyright
-                                skipBytes(value);
+                                seekg(value);
                             }
                             break;
 
                             case 0x03: { // MetaTrackName
-                                skipBytes(value);
+                                seekg(value);
                             }
                             break;
 
                             case 0x04: { // MetaInstrumentName
-                                skipBytes(value);
+                                seekg(value);
                             }
                             break;
 
                             case 0x05: { // MetaLyrics
-                                skipBytes(value);
+                                seekg(value);
                             }
                             break;
 
                             case 0x06: { // MetaMarker
-                                skipBytes(value);
+                                seekg(value);
                             }
                             break;
 
                             case 0x07: { // MetaCuePoint
-                                skipBytes(value);
+                                seekg(value);
                             }
                             break;
 
                             case 0x20: { // MetaChannelPrefix
-                                skipBytes(1);
+                                seekg(1);
                             }
                             break;
 
@@ -169,27 +165,27 @@ bool Midi::parse(const char *name) {
                             break;
 
                             case 0x54: { // MetaSMPTEOffset
-                               skipBytes(5);
+                               seekg(5);
                             }
                             break;
 
                             case 0x58: { // MetaTimeSignature
                                 //uint8_t numenator = readByte();
                                 //uint8_t denominator = readByte();
-                                //skipBytes(2);
-                                skipBytes(4);
+                                //seekg(2);
+                                seekg(4);
                                 
                                 //std::cout << "time signature" << (uint16_t)numenator << "/" << (uint32_t)(1 <<  denominator) << std::endl;
                             }
                             break;
 
                             case 0x59: { // MetaKeySignature
-                                skipBytes(2);
+                                seekg(2);
                             }
                             break;
 
                             case 0x7F: { // MetaSequencerSpecific
-                                skipBytes(value);
+                                seekg(value);
                             }
                             break;
 
@@ -277,10 +273,10 @@ uint8_t Midi::readByte() {
     return in.get();
 }
 
-void Midi::skipBytes(uint32_t length) {
-    pos += length;
+void Midi::seekg(int32_t cursor) {
+    pos += cursor;
     //in.seekg(pos, std::ios::beg);
-    in.seekg(length, std::ios::cur);
+    in.seekg(cursor, std::ios::cur);
 }
 
 std::string Midi::readStr(uint16_t length) {
