@@ -3,17 +3,18 @@
 Midi::Midi() : pos(0), unitOfTime(60000.0f) {}
 
 Midi::~Midi(){
+	if (in.is_open()) in.close();
     tracks.clear();
 }
 
 bool Midi::parse(const char *name) {
     in.open(name, std::ios::in | std::ios::binary);
-    if (!in.is_open()) return 1;
+    if (!in.is_open()) return false;
 
-    if (readStr(4).compare("MThd") != 0) return 1;
+    if (readStr(4).compare("MThd") != 0) return false;
 
     uint32_t chunkSize = readBytes(4);
-    if (chunkSize != 6) return 1;
+    if (chunkSize != 6) return false;
 
     //uint16_t formatType = readBytes(2);
     seekg(2);
@@ -22,7 +23,7 @@ bool Midi::parse(const char *name) {
     uint32_t timeDivision = readBytes(2);
 
     if (timeDivision & 0x8000) 
-        return 1; //15 bit set SMPTE format
+        return false; //15 bit set SMPTE format
 
     uint8_t previousEvent = 0;
     uint32_t maxTicks = 0;
@@ -207,8 +208,9 @@ bool Midi::parse(const char *name) {
     std::sort(tempo_map.begin(), tempo_map.end(), [&](const Tempo &tempo1, const Tempo &tempo2) {
         return tempo1.tick < tempo2.tick;
     });
-
-    for (float i = 0, elapsedTicks = 0.0f, time = 0.0f; i < tempo_map.size(); ++i) {
+	
+	int32_t i = 0;
+    for (float elapsedTicks = 0.0f, time = 0.0f; i < tempo_map.size(); ++i) {
         time += (unitOfTime / tempo_map[i ? i - 1 : i].tempo) * ((tempo_map[i].tick - elapsedTicks) / timeDivision);
         elapsedTicks = tempo_map[i].tick;
         tempo_map[i].time = time;
@@ -246,7 +248,7 @@ bool Midi::parse(const char *name) {
     //maxTime = tempo_map.back().time + (maxTicks - tempo_map.back().tick) * (unitOfTime / tempo_map.back().tempo) / timeDivision;
     //std::cout << "minutes " << ((uint32_t)maxTime / 1000) / 60 << " seconds " << ((uint32_t)maxTime / 1000) % 60 << std::endl;
     in.close();
-    return 0;
+    return true;
 }
 
 const std::vector<Midi::Track>& Midi::getTracks() const {
