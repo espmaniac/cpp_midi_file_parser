@@ -3,7 +3,7 @@
 Midi::Midi() : pos(0), unitOfTime(60000.0f) {}
 
 Midi::~Midi(){
-	if (in.is_open()) in.close();
+    if (in.is_open()) in.close();
     tracks.clear();
 }
 
@@ -209,7 +209,7 @@ bool Midi::parse(const char *name) {
         return tempo1.tick < tempo2.tick;
     });
 	
-	int32_t i = 0;
+    int32_t i = 0;
     for (float elapsedTicks = 0.0f, time = 0.0f; i < tempo_map.size(); ++i) {
         time += (unitOfTime / tempo_map[i ? i - 1 : i].tempo) * ((tempo_map[i].tick - elapsedTicks) / timeDivision);
         elapsedTicks = tempo_map[i].tick;
